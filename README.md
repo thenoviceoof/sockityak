@@ -62,3 +62,13 @@ TODO
  - Get AJAX-y Tornado+Redis running
  - Get real time chat
  - Start going down the list
+
+CONCERNS
+================================================================================
+ - Grove.io?
+   - Still based on IRC
+   - Does not seem to have tiered notifications
+   - No NLP fanciness
+   - No forking model
+   - Not voting system
+   - Won't learn Tornado unless I build APPNAME
