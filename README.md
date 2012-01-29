@@ -42,6 +42,7 @@ GOALS
  - Some extensions to the twitter conventions
    (!@ (immediate notify), ## (channel), @##channel:line (reply to line),
     @# (notify tag watchers), )
+ - Autocomplete EVERYTHING
  - Add in a +1/like infrastructure
  - XMPP integration (digests/notifications)
  - IRC integration (single channel)
