@@ -8,9 +8,6 @@
     <h1>{{ channel }}</h1>
 
     <ul id="stuff">
-      {% for post in posts %}
-      <li>{{ post["i"] }} | {{ post["u"] }} : {{ post["m"] }}</li>
-      {% end %}
     </ul>
     <form method="POST" id="form">
       <input type="text" name="post" id="post" />
@@ -18,7 +15,12 @@
     </form>
 
     <script src="/static/js/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript">var channel = "{{ channel }}";</script>
+    <script src="/static/js/underscore-min.js"></script>
+    <script src="/static/js/backbone-min.js"></script>
+    <script type="text/javascript">
+      var channel = "{{ channel }}";
+      var prepopulate_chat = {% raw json_encode( posts ) %};
+    </script>
     <script src="/static/js/script.js"></script>
   </body>
 </html>

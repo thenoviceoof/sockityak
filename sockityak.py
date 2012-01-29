@@ -30,6 +30,8 @@ class ChannelHandler(tornado.web.RequestHandler):
         r = redis.Redis(host="localhost",port=6379,db=0)
         r.sadd("channels", channel)
         key = "channel:%s" % channel
+        #posts = json.dumps([json.loads(p) for p in r.lrange(key, -10, -1)])
+        #posts = r.lrange(key, -10, -1)
         posts = [json.loads(p) for p in r.lrange(key, -10, -1)]
         self.render("templates/channel.html", posts=posts, channel=channel)
 
@@ -38,6 +40,8 @@ class ChannelHandler(tornado.web.RequestHandler):
 
 # connection pool
 connections = {}
+
+DEBUG = True
 
 # pubsub listening thread
 def pubsub_listen():
@@ -69,14 +73,18 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
 
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "channel:%s" % self.channel
-        j = json.dumps({"m":message, "u":"User"})
+        j = json.dumps({"mess":message, "user":"User"})
         length = r.rpush(key, j)
-        j = json.dumps({"m":message, "u":"User", "i":length-1})
+        j = json.dumps({"mess":message, "user":"User", "line":length-1})
         r.lset(key, length-1, j)
 
         # publish
-        pub_channel = "pub:%s" % self.channel
-        r.publish(pub_channel, message)
+        if DEBUG:
+            for conn in self.conns:
+                conn.send_msg(j)
+        else:
+            pub_channel = "pub:%s" % self.channel
+            r.publish(pub_channel, j)
 
     def send_msg(self, msg):
         self.write_message(msg)
@@ -108,7 +116,8 @@ application = tornado.web.Application(handlers, **settings)
 
 if __name__ == "__main__":
     # start pubsub listening thread
-    threading.Thread(target=pubsub_listen).start()
+    if not DEBUG:
+        threading.Thread(target=pubsub_listen).start()
     # start tornado things
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
