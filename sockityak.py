@@ -10,6 +10,7 @@ import redis
 
 import threading
 
+import time
 import json
 import os
 from operator import itemgetter
@@ -30,17 +31,19 @@ class ChannelHandler(tornado.web.RequestHandler):
         r = redis.Redis(host="localhost",port=6379,db=0)
         r.sadd("channels", channel)
         key = "channel:%s" % channel
-        #posts = json.dumps([json.loads(p) for p in r.lrange(key, -10, -1)])
-        #posts = r.lrange(key, -10, -1)
         posts = [json.loads(p) for p in r.lrange(key, -10, -1)]
         self.render("templates/channel.html", posts=posts, channel=channel)
 
 ################################################################################
 # websockets stuff
 
+def current_ms():
+    return int(round(time.time()*1000))
+
 # connection pool
 connections = {}
 
+# whether or not we should use a multithreaded model or not
 DEBUG = True
 
 # pubsub listening thread
@@ -73,9 +76,11 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
 
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "channel:%s" % self.channel
-        j = json.dumps({"mess":message, "user":"User"})
+        msg = {"mess":message, "user":"User", "line":-1, "time": current_ms()}
+        j = json.dumps(msg)
         length = r.rpush(key, j)
-        j = json.dumps({"mess":message, "user":"User", "line":length-1})
+        msg["line"] = length
+        j = json.dumps(msg)
         r.lset(key, length-1, j)
 
         # publish

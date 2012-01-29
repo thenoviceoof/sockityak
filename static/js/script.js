@@ -2,13 +2,31 @@
 // for testing
 ////////////////////////////////////////////////////////////////////////////////
 
-// backbone list rendering
 (function($){
+    // utilities
+    function padZeroes(num, pad) {
+        num = ''+num; // convert to string
+        while(num.length < pad) {
+            num = "0" + num;
+        }
+        return num;
+    }
+
+    function timestamp(time) {
+        var d = new Date(time);
+        return $.map([d.getHours(),d.getMinutes(),d.getSeconds()],
+                     function(elem, ind){
+                         return padZeroes(elem, 2);
+                     }).join(":");
+    }
+
+    // backbone list rendering
     var Line = Backbone.Model.extend({
         defaults: {
             line: 0,
             user: "anon",
-            mess: ""
+            mess: "",
+            time: 0
         }
     });
 
@@ -35,10 +53,12 @@
             }, this);
         },
         appendItem: function(item) {
-            var lineNum = $("<b>").text(item.get("line"));
+            var timeStamp = $("<span>").text(timestamp(item.get("time")));
+            var lineNum = $("<b>").text(padZeroes(item.get("line"), 5));
             var userName = $("<i>").text(item.get("user"));
             var message = $("<span>").text(item.get("mess"));
-            var li = $("<li>").html(lineNum).append(userName).append(message);
+            var li = $("<li>").html(timeStamp).append(lineNum)
+                .append(userName).append(message);
             $(this.el).append(li);
         },
     });
@@ -46,7 +66,7 @@
     var thread = new ThreadView();
 
     for(var i in prepopulate_chat) {
-	thread.appendItem(new Line(prepopulate_chat[i]));
+        thread.appendItem(new Line(prepopulate_chat[i]));
     }
 
     // --------------------------------------------------
@@ -70,9 +90,9 @@
                 ws.send(mess);
             };
 
-            // message back
+            // new message
             ws.onmessage = function(evt) {
-		thread.appendItem(new Line(JSON.parse(evt.data)));
+                thread.appendItem(new Line(JSON.parse(evt.data)));
             };
 
             // try reconnecting
