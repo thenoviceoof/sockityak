@@ -56,7 +56,7 @@ GOALS
 TODO
 ================================================================================
  X Get Redis running
- X Get Python+Redis working
+ X Get Python+Redis working (apt-get install python-redis)
  - Get Tornado running
  - Get Tornado+Redis running (simple updates)
  - Get AJAX-y Tornado+Redis running
