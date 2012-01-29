@@ -61,7 +61,7 @@ TODO
  X Get Tornado running (pip install tornado, ubuntu current is 1.2)
  X Get Tornado+Redis running (simple updates)
  X Get AJAX-y Tornado+Redis running
- - Get real time chat
+ X Get real time chat
  - Start going down the list
 
 CONCERNS

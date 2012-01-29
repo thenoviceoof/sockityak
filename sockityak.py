@@ -24,15 +24,23 @@ class MainHandler(tornado.web.RequestHandler):
         r.rpush(KEY, post)
         self.redirect("/")
 
+
+conns = set()
 class EchoWebSocket(tornado.websocket.WebSocketHandler):
     def open(self):
         print "WebSocket opened"
+        conns.add(self)
 
     def on_message(self, message):
-        self.write_message(u"You said: " + message)
+        for conn in conns:
+            conn.send_msg(message)
+
+    def send_msg(self, msg):
+        self.write_message(u"User: " + msg)
 
     def on_close(self):
         print "WebSocket closed"
+        conns.remove(self)
 
 handlers = [
     (r"/", MainHandler),

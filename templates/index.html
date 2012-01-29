@@ -5,10 +5,10 @@
   </head>
 
   <body>
-    <ul>
-    {% for post in posts %}
-    <li>{{ post }}</li>
-    {% end %}
+    <ul id="stuff">
+      {% for post in posts %}
+      <li>{{ post }}</li>
+      {% end %}
     </ul>
     <form method="POST" id="form">
       <input type="text" name="post" id="post" />

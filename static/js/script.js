@@ -10,7 +10,7 @@ ws.onopen = function() {
 
 // message back
 ws.onmessage = function (evt) {
-    alert(evt.data);
+    $("#stuff").append($("<li>").text(evt.data));
 };
 
 // send a message
