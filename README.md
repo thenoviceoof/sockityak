@@ -55,8 +55,8 @@ GOALS
 
 TODO
 ================================================================================
- - Get Redis running
- - Get Python+Redis working
+ X Get Redis running
+ X Get Python+Redis working
  - Get Tornado running
  - Get Tornado+Redis running (simple updates)
  - Get AJAX-y Tornado+Redis running
