@@ -53,10 +53,14 @@
             }, this);
         },
         appendItem: function(item) {
-            var timeStamp = $("<span>").text(timestamp(item.get("time")));
-            var lineNum = $("<b>").text(padZeroes(item.get("line"), 5));
-            var userName = $("<i>").text(item.get("user"));
-            var message = $("<span>").text(item.get("mess"));
+            var timeStamp = $("<span>").addClass("timestamp")
+                .text(timestamp(item.get("time")));
+            var lineNum = $("<span>").addClass("line-number")
+                .text(padZeroes(item.get("line"), 5));
+            var userName = $("<span>").addClass("username")
+                .text(item.get("user"));
+            var message = $("<span>").addClass("message")
+                .text(item.get("mess"));
             var li = $("<li>").html(timeStamp).append(lineNum)
                 .append(userName).append(message);
             $(this.el).append(li);

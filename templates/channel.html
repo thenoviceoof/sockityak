@@ -1,17 +1,26 @@
 <!doctype html>
 <html>
   <head>
-    <title>Hello world</title>
+    <title>Sockityak</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
   </head>
 
   <body>
-    <h1>{{ channel }}</h1>
+    <header id="page-header">
+      <a id="home-page" href="/">Channels</a>
+      <a href="#">Some Other... organizations?</a>
+    </header>
+
+    <h1 id="channel-name">{{ channel }}</h1>
 
     <ul id="stuff">
     </ul>
     <form method="POST" id="form">
-      <input type="text" name="post" id="post" />
       <button type="button" id="submit">SUBMIT</button>
+      <div id="post-cont">
+	<input type="text" name="post" id="post" />
+      </div>
     </form>
 
     <script src="/static/js/jquery-1.7.1.min.js"></script>
