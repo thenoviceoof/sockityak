@@ -38,7 +38,7 @@ GOALS
  - Provide a highly asynchronous chat
  - Interval digests
  - Tiered notifications
- - Twitter-like convections (@ (mention), # (tag))
+ - Twitter-like conventions (@ (mention), # (tag))
  - Some extensions to the twitter conventions
    (!@ (immediate notify), ## (channel), @##channel:line (reply to line),
     @# (notify tag watchers), )
@@ -50,7 +50,8 @@ GOALS
  - NLP to determine whether a user would want to know about this update
  - NLP to determine topic name
  - Voting system for topic changes, merges(?)
- - Possibly access control
+ - Ensure University association for chat
+ - Possibly access control (users against orgs/threads)
  - Possibly organization separation
  - Learn tornado and redis
 
@@ -62,7 +63,20 @@ TODO
  X Get Tornado+Redis running (simple updates)
  X Get AJAX-y Tornado+Redis running
  X Get real time chat
- - Start going down the list
+ - Add channels
+ - switch to json format in chat data
+ - Add auth (google oauth, or facebook oauth. or both)
+ - Probably clean up the styles right about here
+ - Add title-page notification
+ - Add email notifications
+ - Parse out @ and #, figure out what to do with these
+
+USING
+================================================================================
+ - Tornado
+ - Redis
+ - websockets
+ - jQuery
 
 CONCERNS
 ================================================================================
