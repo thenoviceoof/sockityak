@@ -13,15 +13,17 @@ from operator import itemgetter
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        channels = [(name,len(conns))
-                    for (name, conns) in connections.iteritems()]
-        channels.sort(key=itemgetter(1))
+        r = redis.Redis(host="localhost",port=6379,db=0)
+        key = "channels" # set of channel names
+        channels = r.smembers(key)
+        # channels.sort(key=itemgetter(1)) # need to get channel age
         self.render("templates/index.html", channels=channels)
 
 class ChannelHandler(tornado.web.RequestHandler):
     def get(self, channel):
         # note: StrictRedis is not available
         r = redis.Redis(host="localhost",port=6379,db=0)
+        r.sadd("channels", channel)
         key = "channel:%s" % channel
         posts = r.lrange(key, 0, -1)
         self.render("templates/channel.html", posts=posts, channel=channel)
@@ -51,6 +53,12 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
     def on_close(self):
         print "WebSocket closed"
         self.conns.remove(self)
+        # try to clean up (possible race condition)
+        if len(self.conns) == 0:
+            try:
+                del connections[self.channel]
+            except:
+                pass # don't do anything, probably a race
 
 handlers = [
     (r"/", MainHandler),

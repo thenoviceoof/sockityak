@@ -6,8 +6,8 @@
 
   <body>
     <ul id="stuff">
-      {% for (name, number) in channels %}
-      <li><a href="/channel/{{ name }}">{{ name }}: {{ number }}</a></li>
+      {% for name in channels %}
+      <li><a href="/channel/{{ name }}">{{ name }}</a></li>
       {% end %}
       <li id="new_channel">Make new channel</li>
     </ul>

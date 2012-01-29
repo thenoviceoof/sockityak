@@ -57,13 +57,13 @@ GOALS
 
 TODO
 ================================================================================
- X Get Redis running
- X Get Python+Redis working (apt-get install python-redis)
- X Get Tornado running (pip install tornado, ubuntu current is 1.2)
- X Get Tornado+Redis running (simple updates)
- X Get AJAX-y Tornado+Redis running
- X Get real time chat
- - Add channels
+ - X Get Redis running
+ - X Get Python+Redis working (apt-get install python-redis)
+ - X Get Tornado running (pip install tornado, ubuntu current is 1.2)
+ - X Get Tornado+Redis running (simple updates)
+ - X Get AJAX-y Tornado+Redis running
+ - X Get real time chat
+ - X Add channels
  - switch to json format in chat data
  - Add auth (google oauth, or facebook oauth. or both)
  - Probably clean up the styles right about here
