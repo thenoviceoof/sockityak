@@ -10,9 +10,12 @@
     <li>{{ post }}</li>
     {% end %}
     </ul>
-    <form method="POST">
-      <input type="text" name="post" />
-      <button>SUBMIT</button>
+    <form method="POST" id="form">
+      <input type="text" name="post" id="post" />
+      <button type="button" id="submit">SUBMIT</button>
     </form>
+
+    <script src="/static/js/jquery-1.7.1.min.js"></script>
+    <script src="/static/js/script.js"></script>
   </body>
 </html>

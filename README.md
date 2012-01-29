@@ -60,7 +60,7 @@ TODO
  X Get Python+Redis working (apt-get install python-redis)
  X Get Tornado running (pip install tornado, ubuntu current is 1.2)
  X Get Tornado+Redis running (simple updates)
- - Get AJAX-y Tornado+Redis running
+ X Get AJAX-y Tornado+Redis running
  - Get real time chat
  - Start going down the list
 
