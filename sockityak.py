@@ -8,8 +8,11 @@ import tornado.websocket
 
 import redis
 
+import json
 import os
 from operator import itemgetter
+
+################################################################################
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -25,7 +28,7 @@ class ChannelHandler(tornado.web.RequestHandler):
         r = redis.Redis(host="localhost",port=6379,db=0)
         r.sadd("channels", channel)
         key = "channel:%s" % channel
-        posts = r.lrange(key, 0, -1)
+        posts = [json.loads(p) for p in r.lrange(key, -10, -1)]
         self.render("templates/channel.html", posts=posts, channel=channel)
 
 connections = {}
@@ -42,10 +45,13 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
 
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "channel:%s" % self.channel
-        r.rpush(key, message)
+        j = json.dumps({"m":message, "u":"User"})
+        length = r.rpush(key, j)
+        j = json.dumps({"m":message, "u":"User", "i":length-1})
+        r.lset(key, length-1, j)
 
         for conn in self.conns:
-            conn.send_msg(message)
+            conn.send_msg(j)
 
     def send_msg(self, msg):
         self.write_message(msg)

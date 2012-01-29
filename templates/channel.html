@@ -5,9 +5,11 @@
   </head>
 
   <body>
+    <h1>{{ channel }}</h1>
+
     <ul id="stuff">
       {% for post in posts %}
-      <li>{{ post }}</li>
+      <li>{{ post["i"] }} | {{ post["u"] }} : {{ post["m"] }}</li>
       {% end %}
     </ul>
     <form method="POST" id="form">

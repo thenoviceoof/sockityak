@@ -64,7 +64,7 @@ TODO
  - X Get AJAX-y Tornado+Redis running
  - X Get real time chat
  - X Add channels
- - switch to json format in chat data
+ - X switch to json format in chat data
  - Add auth (google oauth, or facebook oauth. or both)
  - Probably clean up the styles right about here
  - Add title-page notification
