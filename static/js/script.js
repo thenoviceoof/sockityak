@@ -2,7 +2,7 @@
 // for testing
 ////////////////////////////////////////////////////////////////////////////////
 
-var ws = new WebSocket("ws://"+window.location.host+"/websocket");
+var ws = new WebSocket("ws://"+window.location.host+"/websocket/"+channel);
 
 ws.onopen = function() {
     console.log("Websocket open");

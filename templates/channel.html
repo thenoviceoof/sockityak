@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Hello world</title>
+  </head>
+
+  <body>
+    <ul id="stuff">
+      {% for post in posts %}
+      <li>{{ post }}</li>
+      {% end %}
+    </ul>
+    <form method="POST" id="form">
+      <input type="text" name="post" id="post" />
+      <button type="button" id="submit">SUBMIT</button>
+    </form>
+
+    <script src="/static/js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript">var channel = "{{ channel }}";</script>
+    <script src="/static/js/script.js"></script>
+  </body>
+</html>

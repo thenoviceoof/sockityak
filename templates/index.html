@@ -6,16 +6,13 @@
 
   <body>
     <ul id="stuff">
-      {% for post in posts %}
-      <li>{{ post }}</li>
+      {% for (name, number) in channels %}
+      <li><a href="/channel/{{ name }}">{{ name }}: {{ number }}</a></li>
       {% end %}
+      <li id="new_channel">Make new channel</li>
     </ul>
-    <form method="POST" id="form">
-      <input type="text" name="post" id="post" />
-      <button type="button" id="submit">SUBMIT</button>
-    </form>
 
     <script src="/static/js/jquery-1.7.1.min.js"></script>
-    <script src="/static/js/script.js"></script>
+    <script src="/static/js/index.js"></script>
   </body>
 </html>

@@ -9,42 +9,53 @@ import tornado.websocket
 import redis
 
 import os
-
-KEY = "STATIC"
+from operator import itemgetter
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
+        channels = [(name,len(conns))
+                    for (name, conns) in connections.iteritems()]
+        channels.sort(key=itemgetter(1))
+        self.render("templates/index.html", channels=channels)
+
+class ChannelHandler(tornado.web.RequestHandler):
+    def get(self, channel):
         # note: StrictRedis is not available
         r = redis.Redis(host="localhost",port=6379,db=0)
-        posts = r.lrange(KEY, 0, -1)
-        self.render("templates/index.html", posts= posts)
-    def post(self):
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        post = self.get_argument("post")
-        r.rpush(KEY, post)
-        self.redirect("/")
+        key = "channel:%s" % channel
+        posts = r.lrange(key, 0, -1)
+        self.render("templates/channel.html", posts=posts, channel=channel)
 
-
-conns = set()
+connections = {}
 class EchoWebSocket(tornado.websocket.WebSocketHandler):
-    def open(self):
+    def open(self, channel):
         print "WebSocket opened"
+        self.channel = channel
+        conns = connections.setdefault(channel, set())
         conns.add(self)
+        self.conns = conns
 
     def on_message(self, message):
-        for conn in conns:
+        print("Message on %s: %s" % (self.channel, message))
+
+        r = redis.Redis(host="localhost",port=6379,db=0)
+        key = "channel:%s" % self.channel
+        r.rpush(key, message)
+
+        for conn in self.conns:
             conn.send_msg(message)
 
     def send_msg(self, msg):
-        self.write_message(u"User: " + msg)
+        self.write_message(msg)
 
     def on_close(self):
         print "WebSocket closed"
-        conns.remove(self)
+        self.conns.remove(self)
 
 handlers = [
     (r"/", MainHandler),
-    (r"/websocket", EchoWebSocket),    
+    (r"/channel/(\w+)", ChannelHandler),
+    (r"/websocket/(\w+)", EchoWebSocket),    
 ]
 
 settings = dict(
