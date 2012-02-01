@@ -5,6 +5,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.template
 import tornado.websocket
+import tornado.auth
 
 import redis
 
@@ -19,11 +20,14 @@ from operator import itemgetter
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        key = "channels" # set of channel names
-        channels = r.smembers(key)
-        # channels.sort(key=itemgetter(1)) # need to get channel age
-        self.render("templates/index.html", channels=channels)
+        if self.get_cookie("user", None):
+            r = redis.Redis(host="localhost",port=6379,db=0)
+            key = "channels" # set of channel names
+            channels = r.smembers(key)
+            # channels.sort(key=itemgetter(1)) # need to get channel age
+            self.render("templates/list.html", channels=channels)
+        else:
+            self.render("templates/index.html")
 
 class ChannelHandler(tornado.web.RequestHandler):
     def get(self, channel):
@@ -32,7 +36,45 @@ class ChannelHandler(tornado.web.RequestHandler):
         r.sadd("channels", channel)
         key = "channel:%s" % channel
         posts = [json.loads(p) for p in r.lrange(key, -10, -1)]
-        self.render("templates/channel.html", posts=posts, channel=channel)
+        user = self.get_cookie("uname")
+        self.render("templates/channel.html",
+                    posts=posts, channel=channel, user=user)
+
+################################################################################
+# Auth
+
+# mostly copy-pasted
+class GoogleHandler(tornado.web.RequestHandler, tornado.auth.GoogleMixin):
+    @tornado.web.asynchronous
+    def get(self):
+        if self.get_argument("openid.mode", None):
+            self.get_authenticated_user(self.async_callback(self._on_auth))
+            return
+        self.authenticate_redirect()
+
+    def _on_auth(self, user):
+        if not user:
+            raise tornado.web.HTTPError(500, "Google auth failed")
+        
+        # set the cookies
+        self.set_cookie("user", user["email"])
+        if user["name"]:
+            self.set_cookie("uname", user["name"].replace(" ","_"))
+        else:
+            self.set_cookie("uname", user["email"])
+        # save
+        r = redis.Redis(host="localhost",port=6379,db=0)
+        key = "user:%s" % user["email"]
+        r.set(key, user["name"])
+
+        # and redirect
+        self.redirect("/")
+
+class LogoutHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.clear_cookie("user")
+        self.clear_cookie("username")
+        self.redirect("/")
 
 ################################################################################
 # websockets stuff
@@ -75,7 +117,8 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
     def recieve_chat(self, message):
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "channel:%s" % self.channel
-        msg = {"mess":message, "user":"User", "line":-1, "time": current_ms()}
+        msg = {"mess":message, "user":self.user,
+               "line":-1, "time": current_ms()}
 
         j = json.dumps(msg)
         length = r.rpush(key, j)
@@ -130,12 +173,15 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
 
 handlers = [
     (r"/", MainHandler),
+    (r"/auth", GoogleHandler),
+    (r"/logout", LogoutHandler),
     (r"/channel/(\w+)", ChannelHandler),
     (r"/websocket/(\w+)", EchoWebSocket),    
 ]
 
 settings = dict(
     static_path=os.path.join(os.path.dirname(__file__), "static"),
+    cookie_secret="25c64b931ead92097fd2d435b3621dca",
 )
 
 application = tornado.web.Application(handlers, **settings)

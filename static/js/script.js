@@ -32,8 +32,8 @@
 
     var Thread = Backbone.Collection.extend({
         model: Line,
-	// sort by timestamp
-	comparator: function(line) { return line.get("line"); }
+        // sort by timestamp
+        comparator: function(line) { return line.get("line"); }
     });
 
     // instantiate this page's thread
@@ -43,23 +43,23 @@
 
     // backbone views
     var LineView = Backbone.View.extend({
-	tagName: "li",
-	template: _.template($("#line-template").html()),
-	render: function() {
-	    $(this.el).html(this.template(this.model.toJSON()));
-	    this.setText();
-	    return this;
-	},
-	setText: function() {
-	    var time = timestamp(this.model.get('time'));
-	    var line = padZeroes(this.model.get('line'), 5);
-	    var user = this.model.get('user');
-	    var mess = this.model.get('mess');
-	    this.$(".timestamp").text(time);
-	    this.$(".line-number").text(line);
-	    this.$(".username").text(user);
-	    this.$(".message").text(mess);
-	}
+        tagName: "li",
+        template: _.template($("#line-template").html()),
+        render: function() {
+            $(this.el).html(this.template(this.model.toJSON()));
+            this.setText();
+            return this;
+        },
+        setText: function() {
+            var time = timestamp(this.model.get('time'));
+            var line = padZeroes(this.model.get('line'), 5);
+            var user = this.model.get('user');
+            var mess = this.model.get('mess');
+            this.$(".timestamp").text(time);
+            this.$(".line-number").text(line);
+            this.$(".username").text(user);
+            this.$(".message").text(mess);
+        }
     });
 
     var ThreadView = Backbone.View.extend({
@@ -72,22 +72,22 @@
 
             this.render();
         },
-	// right now, just kill all the chats, and rebuild everything
-	// !!! this is very expensive, and bad
+        // right now, just kill all the chats, and rebuild everything
+        // !!! this is very expensive, and bad
         render: function() {
-	    $("#chatroom li").remove();
-	    for(var i in this.collection.models) {
-		this.append(this.collection.models[i]);
-	    }
+            $("#chatroom li").remove();
+            for(var i in this.collection.models) {
+                this.append(this.collection.models[i]);
+            }
         },
         append: function(line) {
-	    var view = new LineView({model: line});
-	    $("#chatroom").append(view.render().el);
+            var view = new LineView({model: line});
+            $("#chatroom").append(view.render().el);
         },
-	// !!! this is a stupid name
-	addd: function(line) {
-	    this.render();
-	},
+        // !!! this is a stupid name
+        addd: function(line) {
+            this.render();
+        },
     });
 
     window.threadview = new ThreadView();
@@ -114,16 +114,16 @@
 
             // send chat
             self.send = function(mess) {
-		var obj = {"type": "mess", "message": mess};
+                var obj = {"type": "mess", "message": mess};
                 ws.send(JSON.stringify(obj));
             };
-	    // get previous
-	    self.fetchOld = function() {
-		var models = thread.models;
-		var obj = {"type": "old",
-			   "message": models[0].get("line")};
-		ws.send(JSON.stringify(obj));
-	    };
+            // get previous
+            self.fetchOld = function() {
+                var models = thread.models;
+                var obj = {"type": "old",
+                           "message": models[0].get("line")};
+                ws.send(JSON.stringify(obj));
+            };
 
             // new message
             ws.onmessage = function(evt) {
@@ -147,10 +147,10 @@
     var sock = make_websock(ws_url);
 
     $("#load-past").click(function(e){
-	console.log("mu");
-	sock.fetchOld();
-	e.preventDefault();
-	return false;
+        console.log("mu");
+        sock.fetchOld();
+        e.preventDefault();
+        return false;
     });
 
     $("#post").focus();
