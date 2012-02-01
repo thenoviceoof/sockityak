@@ -71,12 +71,12 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         conns.add(self)
         self.conns = conns
 
-    def on_message(self, message):
-        print("Message on %s: %s" % (self.channel, message))
-
+    # request for sending out chats
+    def recieve_chat(self, message):
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "channel:%s" % self.channel
         msg = {"mess":message, "user":"User", "line":-1, "time": current_ms()}
+
         j = json.dumps(msg)
         length = r.rpush(key, j)
         msg["line"] = length
@@ -90,6 +90,27 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         else:
             pub_channel = "pub:%s" % self.channel
             r.publish(pub_channel, j)
+    # handle a request for old chats
+    def fetch_old(self, first_index):
+        r = redis.Redis(host="localhost",port=6379,db=0)
+        key = "channel:%s" % self.channel
+        # out of index does not produce errors
+        posts = r.lrange(key, first_index - 11, first_index - 2)
+        print(posts)
+        for post in posts:
+            self.write_message(post)
+
+    def on_message(self, mess):
+        d = json.loads(mess)
+        t = d["type"]
+        message = d["message"]
+
+        if t == "mess":
+            self.recieve_chat(message)
+        elif t == "old":
+            self.fetch_old(message)
+        else:
+            raise Exception("Does not fit anything")
 
     def send_msg(self, msg):
         self.write_message(msg)

@@ -14,7 +14,8 @@
 
     <h1 id="channel-name">{{ channel }}</h1>
 
-    <ul id="stuff">
+    <ul id="chatroom">
+      <a id="load-past">Load past chats</a>
     </ul>
     <form method="POST" id="form">
       <button type="button" id="submit">SUBMIT</button>
@@ -22,6 +23,13 @@
 	<input type="text" name="post" id="post" />
       </div>
     </form>
+
+    <script type="text/template" id="line-template">
+      <span class="timestamp"></span>
+      <span class="line-number"></span>
+      <span class="username"></span>
+      <span class="message"></span>
+    </script>
 
     <script src="/static/js/jquery-1.7.1.min.js"></script>
     <script src="/static/js/underscore-min.js"></script>

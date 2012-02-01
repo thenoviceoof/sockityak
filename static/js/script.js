@@ -20,7 +20,7 @@
                      }).join(":");
     }
 
-    // backbone list rendering
+    // backbone models
     var Line = Backbone.Model.extend({
         defaults: {
             line: 0,
@@ -31,46 +31,69 @@
     });
 
     var Thread = Backbone.Collection.extend({
-        model: Line
+        model: Line,
+	// sort by timestamp
+	comparator: function(line) { return line.get("line"); }
     });
 
-    // view
-    var ThreadView = Backbone.View.extend({
-        el: $("#stuff"),
-        initialize: function() {
-            _.bindAll(this, 'render', 'appendItem');
+    // instantiate this page's thread
+    var thread = new Thread();
+    // save the thread where we can get at it ???
+    window.thread = thread;
 
-            this.collection = new Thread();
-            this.collection.bind('add', this.appendItem);
+    // backbone views
+    var LineView = Backbone.View.extend({
+	tagName: "li",
+	template: _.template($("#line-template").html()),
+	render: function() {
+	    $(this.el).html(this.template(this.model.toJSON()));
+	    this.setText();
+	    return this;
+	},
+	setText: function() {
+	    var time = timestamp(this.model.get('time'));
+	    var line = padZeroes(this.model.get('line'), 5);
+	    var user = this.model.get('user');
+	    var mess = this.model.get('mess');
+	    this.$(".timestamp").text(time);
+	    this.$(".line-number").text(line);
+	    this.$(".username").text(user);
+	    this.$(".message").text(mess);
+	}
+    });
+
+    var ThreadView = Backbone.View.extend({
+        el: $("#chatroom"),
+        initialize: function() {
+            _.bindAll(this, 'render', 'append', 'addd');
+
+            this.collection = thread;
+            this.collection.bind('add', this.addd);
 
             this.render();
         },
+	// right now, just kill all the chats, and rebuild everything
+	// !!! this is very expensive, and bad
         render: function() {
-            var self = this;
-            // in case collection is not empty
-            _(this.collection.models).each(function(item){
-                self.appendItem(item);
-            }, this);
+	    $("#chatroom li").remove();
+	    for(var i in this.collection.models) {
+		this.append(this.collection.models[i]);
+	    }
         },
-        appendItem: function(item) {
-            var timeStamp = $("<span>").addClass("timestamp")
-                .text(timestamp(item.get("time")));
-            var lineNum = $("<span>").addClass("line-number")
-                .text(padZeroes(item.get("line"), 5));
-            var userName = $("<span>").addClass("username")
-                .text(item.get("user"));
-            var message = $("<span>").addClass("message")
-                .text(item.get("mess"));
-            var li = $("<li>").html(timeStamp).append(lineNum)
-                .append(userName).append(message);
-            $(this.el).append(li);
+        append: function(line) {
+	    var view = new LineView({model: line});
+	    $("#chatroom").append(view.render().el);
         },
+	// !!! this is a stupid name
+	addd: function(line) {
+	    this.render();
+	},
     });
 
-    var thread = new ThreadView();
+    window.threadview = new ThreadView();
 
     for(var i in prepopulate_chat) {
-        thread.appendItem(new Line(prepopulate_chat[i]));
+        thread.add(new Line(prepopulate_chat[i]));
     }
 
     // --------------------------------------------------
@@ -89,20 +112,27 @@
             var ws = new WebSocket(self.loc);
             console.log("Websocket opened");
 
-            // send
+            // send chat
             self.send = function(mess) {
-                ws.send(mess);
+		var obj = {"type": "mess", "message": mess};
+                ws.send(JSON.stringify(obj));
             };
+	    // get previous
+	    self.fetchOld = function() {
+		var models = thread.models;
+		var obj = {"type": "old",
+			   "message": models[0].get("line")};
+		ws.send(JSON.stringify(obj));
+	    };
 
             // new message
             ws.onmessage = function(evt) {
-                thread.appendItem(new Line(JSON.parse(evt.data)));
+                thread.add(new Line(JSON.parse(evt.data)));
             };
 
             // try reconnecting
             ws.onclose = function() {
                 // retry connecting timeouts: grow quadratically
-                console.log(self.loc);
                 var secs = 1000*Math.pow(self.timeout,2);
                 console.log("Trying to reconnect in " + secs/1000 + " seconds");
                 setTimeout(self.open, secs);
@@ -115,6 +145,13 @@
 
     var ws_url = "ws://"+window.location.host+"/websocket/"+channel;
     var sock = make_websock(ws_url);
+
+    $("#load-past").click(function(e){
+	console.log("mu");
+	sock.fetchOld();
+	e.preventDefault();
+	return false;
+    });
 
     $("#post").focus();
 
