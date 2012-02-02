@@ -30,6 +30,7 @@ class RedisSession():
         # get the request ip address, and session cookie
         ip = request.request.remote_ip
         session = request.get_cookie("session")
+        self.request = request
         # if there's no session cookie, generate one
         print(ip)
         print(session)
@@ -51,6 +52,9 @@ class RedisSession():
             # default redis connection
             # !!! possibly build out of application.settings
             self.redis = redis.Redis(host="localhost",port=6379,db=0)
+    def terminate(self):
+        """delete the session cookie"""
+        self.request.set_cookie("session", "", expires=0)
     def generate_sessionid(self, salt):
         """Creates a unique session"""
         return hashlib.sha1(salt+str(time.time())).hexdigest()
@@ -140,8 +144,8 @@ class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
 
 class LogoutHandler(SessionRequestHandler):
     def get(self):
-        self.clear_cookie("user")
-        self.clear_cookie("username")
+        session = self.get_session()
+        session.terminate()
         self.redirect("/")
 
 ################################################################################
