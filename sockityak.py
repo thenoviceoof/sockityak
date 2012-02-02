@@ -14,21 +14,33 @@ import threading
 import time
 import json
 import os
+import hashlib
 from operator import itemgetter
 
 ################################################################################
 # sessions
 
 # default is an hour
-DEFAULT_SESSION_LIFETIME = 3600
+DEFAULT_SESSION_LIFETIME = 24*3600
 
 # session object, through which we fetch data
 class RedisSession():
     def __init__(self, request, redis_connection=None):
         # get the request ip address, and session cookie
         ip = request.request.remote_ip
-        session = session
+        session = request.get_cookie("session")
+        # if there's no session cookie, generate one
+        print(ip)
+        print(session)
+        if not session:
+            # use the given cookie_secret
+            salt = request.settings.get("cookie_secret") + ip
+            session = self.generate_sessionid(salt)
+            print(session)
+            # !!! figure out how to break this out into settings
+            request.set_cookie("session", session, expires_days=1./24)
         self.prefix = "session:%s:%s" % (session, ip)
+        print(self.prefix)
         # fill out the wanted lifetime
         self.lifetime = request.settings.get("session_lifetime",
                                              DEFAULT_SESSION_LIFETIME)
@@ -38,10 +50,14 @@ class RedisSession():
             # default redis connection
             # !!! possibly build out of application.settings
             self.redis = redis.Redis(host="localhost",port=6379,db=0)
+    def generate_sessionid(self, salt):
+        """Creates a unique session"""
+        return hashlib.sha1(salt+str(time.time())).hexdigest()
     def redis_key(self, key):
         """Little utility function to provide consistent key building"""
         return self.prefix + ":" + key
     def get(self, key, default=None):
+        print(self.redis_key(key))
         return (self.redis.get(self.redis_key(key)) or default)
     # support the usual array notation
     def __getitem__(self, key):
@@ -55,8 +71,8 @@ class RedisSession():
         self.redis.expire(k, self.lifetime)
     def __delitem__(self, key):
         self.redis.delete(self.redis_key(key))
-    # !! does NOT support iterators: this means storing keys in a root set
-    # !! and no one cares (__len__, __iter__)
+    # ! does NOT support iterators: this means storing keys in a root set
+    # ! and no one cares (__len__, __iter__)
 
 class SessionRequestHandler(tornado.web.RequestHandler):
     def get_session(self):
@@ -64,10 +80,13 @@ class SessionRequestHandler(tornado.web.RequestHandler):
         return rs
 
 ################################################################################
+# HTML page handlers (mostly)
 
-class MainHandler(tornado.web.RequestHandler):
+class MainHandler(SessionRequestHandler):
     def get(self):
-        if self.get_cookie("user", None):
+        session = self.get_session()
+        user = session.get("user")
+        if user:
             r = redis.Redis(host="localhost",port=6379,db=0)
             key = "channels" # set of channel names
             channels = r.smembers(key)
@@ -76,7 +95,7 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             self.render("templates/index.html")
 
-class ChannelHandler(tornado.web.RequestHandler):
+class ChannelHandler(SessionRequestHandler):
     def get(self, channel):
         # note: StrictRedis is not available
         r = redis.Redis(host="localhost",port=6379,db=0)
@@ -91,7 +110,7 @@ class ChannelHandler(tornado.web.RequestHandler):
 # Auth
 
 # mostly copy-pasted
-class GoogleHandler(tornado.web.RequestHandler, tornado.auth.GoogleMixin):
+class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
         if self.get_argument("openid.mode", None):
@@ -103,13 +122,14 @@ class GoogleHandler(tornado.web.RequestHandler, tornado.auth.GoogleMixin):
         if not user:
             raise tornado.web.HTTPError(500, "Google auth failed")
         
-        # set the cookies
-        self.set_cookie("user", user["email"])
+        # shove information into a session
+        session = self.get_session()
+        session["user"] = user["email"]
         if user["name"]:
-            self.set_cookie("uname", user["name"].replace(" ","_"))
+            session["uname"] = user["name"].replace(" ","_")
         else:
-            self.set_cookie("uname", user["email"])
-        # save
+            session["uname"] = user["email"]
+        # save the user data
         r = redis.Redis(host="localhost",port=6379,db=0)
         key = "user:%s" % user["email"]
         r.set(key, user["name"])
@@ -117,7 +137,7 @@ class GoogleHandler(tornado.web.RequestHandler, tornado.auth.GoogleMixin):
         # and redirect
         self.redirect("/")
 
-class LogoutHandler(tornado.web.RequestHandler):
+class LogoutHandler(SessionRequestHandler):
     def get(self):
         self.clear_cookie("user")
         self.clear_cookie("username")
@@ -229,7 +249,7 @@ handlers = [
 settings = dict(
     static_path=os.path.join(os.path.dirname(__file__), "static"),
     cookie_secret="25c64b931ead92097fd2d435b3621dca",
-    session_lifetime=3600,
+    session_lifetime=24*3600,
 )
 
 application = tornado.web.Application(handlers, **settings)

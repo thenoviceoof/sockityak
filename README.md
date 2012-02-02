@@ -71,12 +71,12 @@ TODO
  - X switch to json format in chat data
    - define an extensible json schema
  - X Add auth (google oauth, or facebook oauth. or both)
-   - remake redis sessions
+   - X remake redis sessions
  - Switch to mongodb (except sessions, pubsub)
  - Probably clean up the styles right about here
    - front page
    - channel list
-   - channel
+   - \ channel
    - settings
  - who's in the room list? / past participants
  - Add title-page notification
