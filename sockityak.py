@@ -17,6 +17,53 @@ import os
 from operator import itemgetter
 
 ################################################################################
+# sessions
+
+# default is an hour
+DEFAULT_SESSION_LIFETIME = 3600
+
+# session object, through which we fetch data
+class RedisSession():
+    def __init__(self, request, redis_connection=None):
+        # get the request ip address, and session cookie
+        ip = request.request.remote_ip
+        session = session
+        self.prefix = "session:%s:%s" % (session, ip)
+        # fill out the wanted lifetime
+        self.lifetime = request.settings.get("session_lifetime",
+                                             DEFAULT_SESSION_LIFETIME)
+        if redis_connection:
+            self.redis = redis_connection
+        else:
+            # default redis connection
+            # !!! possibly build out of application.settings
+            self.redis = redis.Redis(host="localhost",port=6379,db=0)
+    def redis_key(self, key):
+        """Little utility function to provide consistent key building"""
+        return self.prefix + ":" + key
+    def get(self, key, default=None):
+        return (self.redis.get(self.redis_key(key)) or default)
+    # support the usual array notation
+    def __getitem__(self, key):
+        value = self.get(self.redis_key(key))
+        if not value:
+            raise KeyError
+        return value
+    def __setitem__(self, key, value):
+        k = self.redis_key(key)
+        self.redis.set(k, value)
+        self.redis.expire(k, self.lifetime)
+    def __delitem__(self, key):
+        self.redis.delete(self.redis_key(key))
+    # !! does NOT support iterators: this means storing keys in a root set
+    # !! and no one cares (__len__, __iter__)
+
+class SessionRequestHandler(tornado.web.RequestHandler):
+    def get_session(self):
+        rs = RedisSession(self)
+        return rs
+
+################################################################################
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -182,6 +229,7 @@ handlers = [
 settings = dict(
     static_path=os.path.join(os.path.dirname(__file__), "static"),
     cookie_secret="25c64b931ead92097fd2d435b3621dca",
+    session_lifetime=3600,
 )
 
 application = tornado.web.Application(handlers, **settings)
