@@ -45,7 +45,11 @@ GOALS
  - Autocomplete EVERYTHING
  - Add in a +1/like infrastructure
  - XMPP integration (digests/notifications)
+ - smart digests (new tags, @, highly voted treated specially,
+   both new topics and watched topics)
  - IRC integration (single channel)
+ - rate-limiting
+ - ban-hammer: channel and org-wide
  - forking model
  - NLP to determine whether a user would want to know about this update
  - NLP to determine topic name
@@ -53,7 +57,7 @@ GOALS
  - Ensure University association for chat
  - Possibly access control (users against orgs/threads)
  - Possibly organization separation
- - Learn tornado and redis
+ - Learn tornado and redis and mongodb
 
 TODO
 ================================================================================
@@ -65,18 +69,37 @@ TODO
  - X Get real time chat
  - X Add channels
  - X switch to json format in chat data
- - Add auth (google oauth, or facebook oauth. or both)
+   - define an extensible json schema
+ - X Add auth (google oauth, or facebook oauth. or both)
+   - remake redis sessions
+ - Switch to mongodb (except sessions, pubsub)
  - Probably clean up the styles right about here
+   - front page
+   - channel list
+   - channel
+   - settings
+ - who's in the room list? / past participants
  - Add title-page notification
+   - Add audio notifications
+   - easy mute?
  - Add email notifications
- - Parse out @ and #, figure out what to do with these
+   - add "watch" mechanism
+   - once per message, if you're not already connected
+   - digest (hourly)
+   - digest (daily, weekly, hourly)
+ - Parse out @ and #
+   - get XMPP working
+   - !@ - direct notification (marked digest, email, XMPP, text)
+   - lots of if-this-then-that functionality
 
 USING
 ================================================================================
  - Tornado
  - Redis
+ - MongoDB
  - websockets
  - jQuery
+ - backbone.js
 
 CONCERNS
 ================================================================================
