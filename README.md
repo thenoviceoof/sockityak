@@ -97,6 +97,7 @@ USING
  - Tornado
  - Redis
  - MongoDB
+ - asyncmongo
  - websockets
  - jQuery
  - backbone.js
