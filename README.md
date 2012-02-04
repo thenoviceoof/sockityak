@@ -80,7 +80,7 @@ TODO
    - X channel
    - settings
  - who's in the room list? / past participants (sadd, srem)
- - Add title-page notification
+ - X Add title-page notification
    - Add audio notifications
    - easy mute?
  - Add email notifications

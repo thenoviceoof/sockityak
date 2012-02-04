@@ -5,6 +5,14 @@
 (function($){
     // ----------------------------------------
     // random utilities
+    function rand(lower, upper) {
+        if(lower === undefined)
+            lower = 0;
+        if(upper === undefined)
+            upper = 1;
+        return Math.floor(Math.random()*(upper+1-lower))+lower;
+    }
+
     var window_focused = true;
     var title_alerts_i = -1;
     var title_alerts = [];
@@ -20,8 +28,14 @@
     });
     function title_alert(m) {
         // check if the user is focused on this window
-        if(!window_focused)
+        console.log(window_focused);
+        if(!window_focused) {
+            // add a title alert
             title_alerts.push(m);
+            // play a sound
+            console.log($("#tone"+rand(1,5)));
+            $("#tone"+rand(1,5))[0].play();
+        }
     }
     function swap_title_alert() {
         if(title_alerts.length == 0)

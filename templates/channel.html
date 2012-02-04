@@ -30,6 +30,11 @@
 {% end %}
 
 {% block javascript %}
+<audio id="tone1" src="/static/aud/pentatonic-cis5.wav" preload="auto"></audio>
+<audio id="tone2" src="/static/aud/pentatonic-dis5.wav" preload="auto"></audio>
+<audio id="tone3" src="/static/aud/pentatonic-fis5.wav" preload="auto"></audio>
+<audio id="tone4" src="/static/aud/pentatonic-gis5.wav" preload="auto"></audio>
+<audio id="tone5" src="/static/aud/pentatonic-ais5.wav" preload="auto"></audio>
 <script type="text/javascript">
   var channel = "{{ channel }}";
   var user = "{{ user }}";
