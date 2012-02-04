@@ -252,7 +252,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
     # handle a request for sending out a new chat
     @tornado.web.asynchronous
     def recieve_chat(self, message):
-        msg = {"mess":message, "user":self.user, "channel": self.channel,
+        msg = {"message":message, "user":self.user, "channel": self.channel,
                "time": current_ms()}
 
         # define callbacks in reverse-call order
@@ -264,19 +264,20 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
             print(msg)
             # pubsub to subscribers
             r = redis.Redis(host="localhost",port=6379,db=0)
+            j = {"type": "message", "message":msg}
             if DEBUG:
                 for conn in self.conns:
-                    conn.send_msg(msg)
+                    conn.send_msg(j)
             else:
                 pub_channel = "pub:%s" % self.channel
-                r.publish(pub_channel, msg)
+                r.publish(pub_channel, j)
         def _on_line_inc(response, error):
             if error:
                 self.write_message({"type":"error",
                                     "msg": "Could not increment line number"})
                 return
             line_count = response["value"].get("line_count", None)
-            if line_count != None:
+            if line_count is not None:
                 msg["line"] = line_count
             # insert the message
             self.db.posts.insert(msg, callback=_on_msg_insert)
@@ -290,13 +291,27 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
 
     # handle a request for old chats
     def fetch_old(self, first_index):
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        key = "channel:%s" % self.channel
-        # out of index does not produce errors
-        posts = r.lrange(key, first_index - 11, first_index - 2)
-        print(posts)
-        for post in posts:
-            self.write_message(post)
+        # callback
+        def _on_mongo_fetch(response, error):
+            if error:
+                self.write_message({"type":"error",
+                                    "msg": "Could not retrieve messages"})
+                return
+            messages = [{"user":r["user"], "time":r["time"],
+                         "message":r["message"], "line":r["line"]}
+                        for r in response]
+            j = {"type":"history", "message": messages}
+            self.write_message(j)
+        # multiplexing on the index
+        if first_index is None:
+            self.db.posts.find({"channel": self.channel},
+                               sort=[("line",-1)], limit=10,
+                               callback=_on_mongo_fetch)
+        else:
+            self.db.posts.find({"channel": self.channel,
+                                "line": {"$lt": int(first_index)}},
+                               sort=[("line",-1)], limit=10,
+                               callback=_on_mongo_fetch)
     # handle an authentication request
     def auth(self, session_token):
         pass
@@ -309,7 +324,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
     def on_message(self, mess):
         d = json.loads(mess)
         t = d["type"]
-        message = d["message"]
+        message = d.get("message", None)
 
         if t == "mess":
             self.recieve_chat(message)

@@ -24,9 +24,9 @@
     var Line = Backbone.Model.extend({
         defaults: {
             line: 0,
+            time: 0,
             user: "anon",
-            mess: "",
-            time: 0
+            message: ""
         }
     });
 
@@ -54,7 +54,7 @@
             var time = timestamp(this.model.get('time'));
             var line = padZeroes(this.model.get('line'), 5);
             var user = this.model.get('user');
-            var mess = this.model.get('mess');
+            var mess = this.model.get('message');
             this.$(".timestamp").text(time);
             this.$(".line-number").text(line);
             this.$(".username").text(user);
@@ -116,14 +116,28 @@
             // get previous
             self.fetchOld = function() {
                 var models = thread.models;
-                var obj = {"type": "old",
-                           "message": models[0].get("line")};
+                var obj = {"type": "old"};
+                if(models.length != 0) {
+                    obj["message"] = models[0].get("line");
+                }
                 ws.send(JSON.stringify(obj));
             };
 
             // new message
             ws.onmessage = function(evt) {
-                thread.add(new Line(JSON.parse(evt.data)));
+                var data = JSON.parse(evt.data);
+                console.log(data);
+                if(data["type"] == "error") {
+                    console.log("ERROR");
+                } else if(data["type"] == "message") {
+                    thread.add(new Line(data["message"]));   
+                } else if(data["type"] == "history") {
+                    // turn the array of jsons into an array of Lines
+                    var lines = $.map(data["message"], function(e, i){
+                        return new Line(e);
+                    });
+                    thread.add(lines);   
+                }
             };
 
             // try reconnecting
