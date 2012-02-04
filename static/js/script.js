@@ -65,28 +65,41 @@
     var ThreadView = Backbone.View.extend({
         el: $("#chatroom"),
         initialize: function() {
-            _.bindAll(this, 'render', 'append', 'addd');
+            _.bindAll(this, 'render');
 
             this.collection = thread;
-            this.collection.bind('add', this.addd);
+            this.collection.bind('add', this.render);
 
             this.render();
         },
         // right now, just kill all the chats, and rebuild everything
-        // !!! this is very expensive, and bad
         render: function() {
-            $("#chatroom li").remove();
+            // 
+            var c = $("#chatroom");
+            var cc = $("#chat-cont");
+            var scrollt = false;
+            console.log("start");
+            console.log(cc.height() - c.height());
+            console.log(c.scrollTop());
+            if(c.scrollTop() > cc.height() - c.height())
+                scrollt = true;
+            cc.remove();
+            // add everything to a div, add that last (DOM manip expensive)
+            var div = $("<div>").attr("id", "chat-cont");
             for(var i in this.collection.models) {
-                this.append(this.collection.models[i]);
+                var line = this.collection.models[i];
+                var view = new LineView({model: line});
+                div.append(view.render().el);
             }
-        },
-        append: function(line) {
-            var view = new LineView({model: line});
-            $("#chatroom").append(view.render().el);
-        },
-        // !!! this is a stupid name
-        addd: function(line) {
-            this.render();
+            c.append(div);
+            cc = $("#chat-cont");
+            // move scroll
+            console.log(cc.height());
+            console.log(c.height());
+            console.log(cc.height() - c.height());
+            if(scrollt) {
+                c.scrollTop(cc.height());
+            }
         },
     });
 
@@ -148,7 +161,6 @@
             // new message
             ws.onmessage = function(evt) {
                 var data = JSON.parse(evt.data);
-                console.log(data);
                 if(data["type"] == "error") {
                     console.log("ERROR");
                 } else if(data["type"] == "auth") {
@@ -161,7 +173,7 @@
                     var lines = $.map(data["message"], function(e, i){
                         return new Line(e);
                     });
-                    thread.add(lines);   
+                    thread.add(lines);
                 }
             };
 
@@ -203,5 +215,18 @@
         evt.preventDefault();
         return false;
     });
+
+    // resize the chatroom, heightwise
+    function resize_chatroom() {
+        var h = $(document).height();
+        h -= $("#channel-name").outerHeight(true);
+        h -= $("#page-header").outerHeight(true);
+        h -= $("#post-cont").outerHeight(true);
+        $("#chatroom").height(h);
+    }
+
+    // bind that resize
+    $(window).ready(resize_chatroom);
+    $(window).resize(resize_chatroom);
 
 })(jQuery);
