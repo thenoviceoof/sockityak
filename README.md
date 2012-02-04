@@ -69,16 +69,17 @@ TODO
  - X Get real time chat
  - X Add channels
  - X switch to json format in chat data
-   - define an extensible json schema
+   - X define an extensible json schema (if you consider "type"/"message")
  - X Add auth (google oauth, or facebook oauth. or both)
    - X remake redis sessions
- - Switch to mongodb (except sessions, pubsub)
+ - X Switch to mongodb (except sessions, pubsub)
+ - X check sessions are still valid after each message
  - Probably clean up the styles right about here
    - front page
    - channel list
    - \ channel
    - settings
- - who's in the room list? / past participants
+ - who's in the room list? / past participants (sadd, srem)
  - Add title-page notification
    - Add audio notifications
    - easy mute?

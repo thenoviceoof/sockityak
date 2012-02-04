@@ -337,6 +337,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
         user = session.get("user", None)
         if user:
             self.user = user
+            # !!! add us to the redis channel
             self.write_message({"type":"auth"})
         else:
             self.write_message({"type":"error", "message":"Not signed in"})
