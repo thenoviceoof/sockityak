@@ -106,7 +106,6 @@
             }
             self.timeout += 1;
             var ws = new WebSocket(self.loc);
-            console.log("Websocket opened");
 
             // send chat
             self.send = function(mess) {
@@ -120,7 +119,8 @@
                 if(models.length != 0) {
                     obj["message"] = models[0].get("line");
                 }
-                ws.send(JSON.stringify(obj));
+		var j = JSON.stringify(obj)
+                ws.send(j);
             };
 
             // new message
@@ -139,6 +139,12 @@
                     thread.add(lines);   
                 }
             };
+
+	    ws.onopen = function() {
+		console.log("Websocket opened");
+		// load up the initial messages
+		self.fetchOld();
+	    };
 
             // try reconnecting
             ws.onclose = function() {
