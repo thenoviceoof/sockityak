@@ -81,7 +81,7 @@ TODO
    - settings
  - who's in the room list? / past participants (sadd, srem)
  - X Add title-page notification
-   - Add audio notifications
+   - X Add audio notifications
    - easy mute?
  - Add email notifications
    - add "watch" mechanism

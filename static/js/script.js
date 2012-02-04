@@ -33,7 +33,6 @@
             // add a title alert
             title_alerts.push(m);
             // play a sound
-            console.log($("#tone"+rand(1,5)));
             $("#tone"+rand(1,5))[0].play();
         }
     }
