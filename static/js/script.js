@@ -3,7 +3,44 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 (function($){
-    // utilities
+    // ----------------------------------------
+    // random utilities
+    var window_focused = true;
+    var title_alerts_i = -1;
+    var title_alerts = [];
+    var title_alert_original = document.title;
+    $(document).ready(function() {
+        $(document).focusin(function(){
+            title_alerts_i = -1;
+            title_alerts = [];
+            window_focused = true;
+        }).focusout(function(){
+            window_focused = false;
+        });
+    });
+    function title_alert(m) {
+        // check if the user is focused on this window
+        if(!window_focused)
+            title_alerts.push(m);
+    }
+    function swap_title_alert() {
+        if(title_alerts.length == 0)
+            return;
+        if(title_alerts_i < 0) {
+            title_alert_original = document.title;
+            title_alerts_i = 0;
+        } else if(title_alerts_i < title_alerts.length) {
+            document.title = title_alerts[title_alerts_i];
+            title_alerts_i += 1;
+        } else {
+            title_alerts_i = -1;
+            document.title = title_alert_original;
+        }
+    }
+    setInterval(swap_title_alert, 1000);
+
+    // ----------------------------------------
+    // backbone utilities
     function padZeroes(num, pad) {
         num = ''+num; // convert to string
         while(num.length < pad) {
@@ -20,6 +57,7 @@
                      }).join(":");
     }
 
+    // ----------------------------------------
     // backbone models
     var Line = Backbone.Model.extend({
         defaults: {
@@ -163,7 +201,10 @@
                     // auth okay, load up the initial messages
                     self.fetchOld();
                 } else if(data["type"] == "message") {
-                    thread.add(new Line(data["message"]));   
+                    var dm = data["message"];
+                    var t = dm["user"] + ": " + dm["message"];
+                    title_alert(t);
+                    thread.add(new Line(data["message"]));
                 } else if(data["type"] == "history") {
                     // turn the array of jsons into an array of Lines
                     var lines = $.map(data["message"], function(e, i){
