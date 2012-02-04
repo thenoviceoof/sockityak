@@ -92,10 +92,6 @@
 
     window.threadview = new ThreadView();
 
-    for(var i in prepopulate_chat) {
-        thread.add(new Line(prepopulate_chat[i]));
-    }
-
     // --------------------------------------------------
     // Web socket stuff
 

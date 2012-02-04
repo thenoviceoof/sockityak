@@ -12,12 +12,19 @@ import asyncmongo
 
 import threading
 
+from bson.son import SON
+from bson import ObjectId
+
 import datetime
 import time
 import json
 import os
 import hashlib
 from operator import itemgetter, attrgetter
+
+# whether or not we should use a multithreaded model or not
+# affects signin
+DEBUG = True
 
 ################################################################################
 # sessions
@@ -92,7 +99,6 @@ class SessionRequestHandler(tornado.web.RequestHandler):
         session = self.get_session()
         user = session.get("user")
         if not user:
-            self.redirect("/")
             return False
         return True
 
@@ -127,6 +133,12 @@ class AddChannelHandler(SessionRequestHandler):
             self.redirect("/")
             return
         self.channel = channel
+        # check if the channel name is legal
+        if len(channel)==0:
+            self.redirect("/")
+            return
+        # !!! transform the channel name to be legal
+
         # make the channel with default values
         # _id defined to ensure uniqueness
         ch = {"_id": channel, "name": channel, "line_count": 0,
@@ -140,27 +152,18 @@ class AddChannelHandler(SessionRequestHandler):
         self.redirect("/channel/%s" % self.channel)
 
 class ChannelHandler(SessionRequestHandler):
-    @tornado.web.asynchronous
     def get(self, channel):
         # check if the person is signed in
         if not self.check_auth():
             self.redirect("/")
             return
-        # fetch the channel list
-        self.channel = channel
-        self.db.posts.find({"channel": channel}, 
-                           sort=[("line",-1)], limit=10,
-                           callback=self._on_mongo_fetch)
-    def _on_mongo_fetch(self, response, error):
-        posts = response
-
         # get the user, so the websocket can be bound
         session = self.get_session()
         user = session.get("user")
-        channel = self.channel
+        # !! get the posts from clientside
         # render
         self.render("templates/channel.html",
-                    posts=posts, channel=channel, user=user)
+                    channel=channel, user=user)
 
 ################################################################################
 # Auth
@@ -168,6 +171,11 @@ class ChannelHandler(SessionRequestHandler):
 class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
+        if DEBUG:
+            session = self.get_session()
+            session["user"] = "Larry@example.edu"
+            self.redirect("/")
+            return
         if self.get_argument("openid.mode", None):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
@@ -214,9 +222,6 @@ def current_ms():
 # connection pool
 connections = {}
 
-# whether or not we should use a multithreaded model or not
-DEBUG = True
-
 # pubsub listening thread
 def pubsub_listen():
     r = redis.Redis(host="localhost",port=6379,db=0)
@@ -232,7 +237,7 @@ def pubsub_listen():
             conn.send_msg(data)
         d = g.next()
 
-class EchoWebSocket(tornado.websocket.WebSocketHandler):
+class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
     def open(self, channel):
         print("WebSocket opened")
         self.channel = channel
@@ -242,26 +247,47 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         conns.add(self)
         self.conns = conns
 
-    # request for sending out chats
+        self.user = "User"
+
+    # handle a request for sending out a new chat
+    @tornado.web.asynchronous
     def recieve_chat(self, message):
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        key = "channel:%s" % self.channel
-        msg = {"mess":message, "user":self.user,
-               "line":-1, "time": current_ms()}
+        msg = {"mess":message, "user":self.user, "channel": self.channel,
+               "time": current_ms()}
 
-        j = json.dumps(msg)
-        length = r.rpush(key, j)
-        msg["line"] = length
-        j = json.dumps(msg)
-        r.lset(key, length-1, j)
+        # define callbacks in reverse-call order
+        def _on_msg_insert(response, error):
+            if error:
+                self.write_message({"type":"error",
+                                    "msg": "Could not save chat message"})
+                return
+            print(msg)
+            # pubsub to subscribers
+            r = redis.Redis(host="localhost",port=6379,db=0)
+            if DEBUG:
+                for conn in self.conns:
+                    conn.send_msg(msg)
+            else:
+                pub_channel = "pub:%s" % self.channel
+                r.publish(pub_channel, msg)
+        def _on_line_inc(response, error):
+            if error:
+                self.write_message({"type":"error",
+                                    "msg": "Could not increment line number"})
+                return
+            line_count = response["value"].get("line_count", None)
+            if line_count != None:
+                msg["line"] = line_count
+            # insert the message
+            self.db.posts.insert(msg, callback=_on_msg_insert)
 
-        # publish
-        if DEBUG:
-            for conn in self.conns:
-                conn.send_msg(j)
-        else:
-            pub_channel = "pub:%s" % self.channel
-            r.publish(pub_channel, j)
+        # get the next line number, executing a findandmodify
+        command = SON()
+        command['findandmodify'] = 'channels'
+        command['query'] = {'_id': self.channel}
+        command['update'] = {'$inc': {'line_count': 1}}
+        self.db.command(command, callback=_on_line_inc)
+
     # handle a request for old chats
     def fetch_old(self, first_index):
         r = redis.Redis(host="localhost",port=6379,db=0)
@@ -271,6 +297,14 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         print(posts)
         for post in posts:
             self.write_message(post)
+    # handle an authentication request
+    def auth(self, session_token):
+        pass
+
+    #
+    #self.db.posts.find({"channel": channel}, 
+    #                       sort=[("line",-1)], limit=10,
+    #                      callback=self._on_mongo_fetch)
 
     def on_message(self, mess):
         d = json.loads(mess)
