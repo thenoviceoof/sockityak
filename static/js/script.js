@@ -95,6 +95,20 @@
     // --------------------------------------------------
     // Web socket stuff
 
+    // from: http://www.quirksmode.org/js/cookies.html
+    function get_cookie(key) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+                var c = ca[i];
+                while (c.charAt(0)==' ')
+                    c = c.substring(1,c.length);
+                if (c.indexOf(nameEQ) == 0)
+                    return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+
     // creates a wrapper for a websocket
     function make_websock(loc) {
         var self = {};
@@ -107,19 +121,27 @@
             self.timeout += 1;
             var ws = new WebSocket(self.loc);
 
+            // authentication: with session cookie
+            self.auth = function() {
+                // get session cookie
+                var session = get_cookie("session");
+                var obj = {"type":"auth", "message":session};
+                // send the whole rigamole
+                ws.send(JSON.stringify(obj));
+            };
             // send chat
             self.send = function(mess) {
-                var obj = {"type": "mess", "message": mess};
+                var obj = {"type": "message", "message": mess};
                 ws.send(JSON.stringify(obj));
             };
             // get previous
             self.fetchOld = function() {
                 var models = thread.models;
-                var obj = {"type": "old"};
+                var obj = {"type": "history"};
                 if(models.length != 0) {
                     obj["message"] = models[0].get("line");
                 }
-		var j = JSON.stringify(obj)
+                var j = JSON.stringify(obj)
                 ws.send(j);
             };
 
@@ -129,6 +151,9 @@
                 console.log(data);
                 if(data["type"] == "error") {
                     console.log("ERROR");
+                } else if(data["type"] == "auth") {
+                    // auth okay, load up the initial messages
+                    self.fetchOld();
                 } else if(data["type"] == "message") {
                     thread.add(new Line(data["message"]));   
                 } else if(data["type"] == "history") {
@@ -140,11 +165,11 @@
                 }
             };
 
-	    ws.onopen = function() {
-		console.log("Websocket opened");
-		// load up the initial messages
-		self.fetchOld();
-	    };
+            ws.onopen = function() {
+                console.log("Websocket opened");
+                // go authenticate first
+                self.auth();
+            };
 
             // try reconnecting
             ws.onclose = function() {

@@ -34,10 +34,11 @@ DEFAULT_SESSION_LIFETIME = 24*3600
 
 # session object, through which we fetch data
 class RedisSession():
-    def __init__(self, request, redis_connection=None):
+    def __init__(self, request, session=None, redis_connection=None):
         # get the request ip address, and session cookie
         ip = request.request.remote_ip
-        session = request.get_cookie("session")
+        if not session:
+            session = request.get_cookie("session")
         self.request = request
         # if there's no session cookie, generate one
         if not session:
@@ -57,7 +58,8 @@ class RedisSession():
             # !!! possibly build out of application.settings
             self.redis = redis.Redis(host="localhost",port=6379,db=0)
     def terminate(self):
-        """delete the session cookie"""
+        """delete the session cookie, unset the redis session"""
+        
         self.request.set_cookie("session", "", expires=0)
     def generate_sessionid(self, salt):
         """Creates a unique session"""
@@ -92,8 +94,8 @@ class SessionRequestHandler(tornado.web.RequestHandler):
                                          dbname="sockityak")
         return self._db
 
-    def get_session(self):
-        rs = RedisSession(self)
+    def get_session(self, session=None):
+        rs = RedisSession(self, session=session)
         return rs
     def check_auth(self):
         session = self.get_session()
@@ -314,23 +316,27 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
                                callback=_on_mongo_fetch)
     # handle an authentication request
     def auth(self, session_token):
-        pass
-
-    #
-    #self.db.posts.find({"channel": channel}, 
-    #                       sort=[("line",-1)], limit=10,
-    #                      callback=self._on_mongo_fetch)
+        session = self.get_session(session=session_token)
+        user = session.get("user", None)
+        if user:
+            self.user = user
+            self.write_message({"type":"auth"})
+        else:
+            self.write_message({"type":"error", "message":"Not signed in"})
 
     def on_message(self, mess):
         d = json.loads(mess)
         t = d["type"]
         message = d.get("message", None)
 
-        if t == "mess":
+        if t == "message":
             self.recieve_chat(message)
-        elif t == "old":
+        elif t == "history":
             self.fetch_old(message)
+        elif t == "auth":
+            self.auth(message)
         else:
+            print(message)
             raise Exception("Does not fit anything")
 
     def send_msg(self, msg):

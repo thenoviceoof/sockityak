@@ -5,7 +5,7 @@ body {
     padding:0;
 }
 
-/* */
+/* ------------------------------------------------------------ */
 
 #page-header {
     padding:0.3em;
@@ -24,7 +24,7 @@ body {
     border-right:2px #888 solid;
 }
 
-/* */
+/* ------------------------------------------------------------ */
 
 #channel-name {
     margin:0.3em;
@@ -68,7 +68,7 @@ body {
 
 .username {
     display:inline-block;
-    width:5em;
+    width:10em;
     padding-right:0.5em;
     border-right:2px #CCC solid;
     font-weight:bold;
