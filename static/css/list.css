@@ -12,10 +12,16 @@
 }
 
 #channels li:nth-child(odd) {
+    background-color:#DDD;
+}
+#channels li:nth-child(odd):hover {
     background-color:#CCC;
 }
 #channels li:nth-child(even) {
     background-color:#EEE;
+}
+#channels li:nth-child(even):hover {
+    background-color:#FFF;
 }
 
 #channels .channel-link {

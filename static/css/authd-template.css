@@ -24,6 +24,10 @@ body {
     border-right:2px #888 solid;
 }
 
-#logout {
+a#logout, a#logout:visited {
     float:right;
+    color:#888;
+}
+a#logout:hover {
+    color:white;
 }
