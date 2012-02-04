@@ -128,7 +128,8 @@ class AddChannelHandler(SessionRequestHandler):
             return
         self.channel = channel
         # make the channel with default values
-        ch = {"name": channel, "line_count": 0,
+        # _id defined to ensure uniqueness
+        ch = {"_id": channel, "name": channel, "line_count": 0,
               "updated": datetime.datetime.utcnow()}
         # insert the channel
         self.db.channels.insert(ch, callback=self._on_mongo_insert)
@@ -164,7 +165,6 @@ class ChannelHandler(SessionRequestHandler):
 ################################################################################
 # Auth
 
-# mostly copy-pasted
 class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
     @tornado.web.asynchronous
     def get(self):
