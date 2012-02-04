@@ -32,17 +32,13 @@ class RedisSession():
         session = request.get_cookie("session")
         self.request = request
         # if there's no session cookie, generate one
-        print(ip)
-        print(session)
         if not session:
             # use the given cookie_secret
             salt = request.settings.get("cookie_secret") + ip
             session = self.generate_sessionid(salt)
-            print(session)
             # !!! figure out how to break this out into settings
             request.set_cookie("session", session, expires_days=1./24)
         self.prefix = "session:%s:%s" % (session, ip)
-        print(self.prefix)
         # fill out the wanted lifetime
         self.lifetime = request.settings.get("session_lifetime",
                                              DEFAULT_SESSION_LIFETIME)
@@ -62,7 +58,6 @@ class RedisSession():
         """Little utility function to provide consistent key building"""
         return self.prefix + ":" + key
     def get(self, key, default=None):
-        print(self.redis_key(key))
         return (self.redis.get(self.redis_key(key)) or default)
     # support the usual array notation
     def __getitem__(self, key):
@@ -130,15 +125,21 @@ class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
         # shove information into a session
         session = self.get_session()
         session["user"] = user["email"]
-        if user["name"]:
-            session["uname"] = user["name"].replace(" ","_")
-        else:
-            session["uname"] = user["email"]
+        # build the person's username
+        name = user["first_name"]
+        if user.get("last_name", None):
+            name += " "+user["last_name"][0]
+        if not name:
+            name = user["email"]
         # save the user data
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        key = "user:%s" % user["email"]
-        r.set(key, user["name"])
+        user_dict = {"email": user["email"], "username": name}
+        self.db.users.update({"email": user["email"]},
+                             user_dict,
+                             upsert=True, callback=self._on_mongo_response)
 
+    def _on_mongo_response(self, response, error):
+        if error:
+            raise Tornado.web.HTTPError(500)
         # and redirect
         self.redirect("/")
 

@@ -91,6 +91,7 @@ TODO
    - get XMPP working
    - !@ - direct notification (marked digest, email, XMPP, text)
    - lots of if-this-then-that functionality
+ - redis-based rate-limiting
 
 USING
 ================================================================================
