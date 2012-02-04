@@ -382,7 +382,7 @@ handlers = [
     (r"/logout", LogoutHandler),
     (r"/channel/([\w-]+)", ChannelHandler),
     (r"/newchannel/([\w-]+)", AddChannelHandler),
-    (r"/websocket/(\w+)", EchoWebSocket),    
+    (r"/websocket/([\w-]+)", EchoWebSocket),    
 ]
 
 settings = dict(
