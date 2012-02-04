@@ -59,14 +59,20 @@ class RedisSession():
             self.redis = redis.Redis(host="localhost",port=6379,db=0)
     def terminate(self):
         """delete the session cookie, unset the redis session"""
-        
+        keys = list(self.redis.smembers(self.redis_key()))
+        self.redis.delete(self.redis_key())
+        for key in keys:
+            self.redis.delete(self.redis_key(key))
         self.request.set_cookie("session", "", expires=0)
     def generate_sessionid(self, salt):
         """Creates a unique session"""
         return hashlib.sha1(salt+str(time.time())).hexdigest()
-    def redis_key(self, key):
+    def redis_key(self, key=None):
         """Little utility function to provide consistent key building"""
-        return self.prefix + ":" + key
+        if key:
+            return self.prefix + ":" + key
+        else:
+            return self.prefix
     def get(self, key, default=None):
         return (self.redis.get(self.redis_key(key)) or default)
     # support the usual array notation
@@ -77,9 +83,11 @@ class RedisSession():
         return value
     def __setitem__(self, key, value):
         k = self.redis_key(key)
+        self.redis.sadd(self.redis_key(), key)
         self.redis.set(k, value)
         self.redis.expire(k, self.lifetime)
     def __delitem__(self, key):
+        self.redis.srem(self.redis_key(), key)
         self.redis.delete(self.redis_key(key))
     # ! does NOT support iterators: this means storing keys in a root set
     # ! and no one cares (__len__, __iter__)
@@ -249,11 +257,14 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
         conns.add(self)
         self.conns = conns
 
-        self.user = "User"
-
     # handle a request for sending out a new chat
     @tornado.web.asynchronous
     def recieve_chat(self, message):
+        # check signin
+        if not self.session.get("user"):
+            self.write_message({"type":"error", "message": "Not signed in"})
+            return
+        # construct the chat message
         msg = {"message":message, "user":self.user, "channel": self.channel,
                "time": current_ms()}
 
@@ -274,6 +285,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
                 pub_channel = "pub:%s" % self.channel
                 r.publish(pub_channel, j)
         def _on_line_inc(response, error):
+            # execute after line increment, prep the insert
             if error:
                 self.write_message({"type":"error",
                                     "msg": "Could not increment line number"})
@@ -293,6 +305,10 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
 
     # handle a request for old chats
     def fetch_old(self, first_index):
+        # check signin
+        if not self.session.get("user"):
+            self.write_message({"type":"error", "message": "Not signed in"})
+            return
         # callback
         def _on_mongo_fetch(response, error):
             if error:
@@ -317,6 +333,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
     # handle an authentication request
     def auth(self, session_token):
         session = self.get_session(session=session_token)
+        self.session = session
         user = session.get("user", None)
         if user:
             self.user = user
