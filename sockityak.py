@@ -116,6 +116,7 @@ class MainHandler(SessionRequestHandler):
         channels = response
         channels.sort(key=itemgetter("updated"))
         channels.reverse()
+        # render out the template
         self.render("templates/list.html", channels=channels)
 
 class AddChannelHandler(SessionRequestHandler):
@@ -138,17 +139,25 @@ class AddChannelHandler(SessionRequestHandler):
         self.redirect("/channel/%s" % self.channel)
 
 class ChannelHandler(SessionRequestHandler):
+    @tornado.web.asynchronous
     def get(self, channel):
         # check if the person is signed in
         if not self.check_auth():
             self.redirect("/")
             return
         # fetch the channel list
-        r = redis.Redis(host="localhost",port=6379,db=0)
-        r.sadd("channels", channel)
-        key = "channel:%s" % channel
-        posts = [json.loads(p) for p in r.lrange(key, -10, -1)]
-        user = self.get_cookie("uname")
+        self.channel = channel
+        self.db.posts.find({"channel": channel}, 
+                           sort=[("line",-1)], limit=10,
+                           callback=self._on_mongo_fetch)
+    def _on_mongo_fetch(self, response, error):
+        posts = response
+
+        # get the user, so the websocket can be bound
+        session = self.get_session()
+        user = session.get("user")
+        channel = self.channel
+        # render
         self.render("templates/channel.html",
                     posts=posts, channel=channel, user=user)
 
