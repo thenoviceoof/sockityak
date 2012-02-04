@@ -8,8 +8,11 @@
     <a href="/logout">Log out</a>
 
     <ul id="stuff">
-      {% for name in channels %}
-      <li><a href="/channel/{{ name }}">{{ name }}</a></li>
+      {% for channel in channels %}
+      <li>
+	<a href="/channel/{{ channel['name'] }}">##{{ channel['name'] }}</a>
+	{{ channel['updated'] }}
+      </li>
       {% end %}
       <li id="new_channel">Make new channel</li>
     </ul>

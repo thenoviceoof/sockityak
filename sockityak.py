@@ -12,11 +12,12 @@ import asyncmongo
 
 import threading
 
+import datetime
 import time
 import json
 import os
 import hashlib
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 
 ################################################################################
 # sessions
@@ -75,29 +76,74 @@ class RedisSession():
     # ! and no one cares (__len__, __iter__)
 
 class SessionRequestHandler(tornado.web.RequestHandler):
+    @property
+    def db(self):
+        if not hasattr(self, '_db'):
+            self._db = asyncmongo.Client(pool_id="sock",
+                                         host='127.0.0.1', port=27017,
+                                         maxcached=10, maxconnections=50,
+                                         dbname="sockityak")
+        return self._db
+
     def get_session(self):
         rs = RedisSession(self)
         return rs
+    def check_auth(self):
+        session = self.get_session()
+        user = session.get("user")
+        if not user:
+            self.redirect("/")
+            return False
+        return True
 
 ################################################################################
 # HTML page handlers (mostly)
 
 class MainHandler(SessionRequestHandler):
+    @tornado.web.asynchronous
     def get(self):
         session = self.get_session()
         user = session.get("user")
         if user:
-            r = redis.Redis(host="localhost",port=6379,db=0)
-            key = "channels" # set of channel names
-            channels = r.smembers(key)
-            # channels.sort(key=itemgetter(1)) # need to get channel age
-            self.render("templates/list.html", channels=channels)
+            self.db.channels.find(callback=self._on_mongo_response)
         else:
             self.render("templates/index.html")
 
+    def _on_mongo_response(self, response, error):
+        if error:
+            raise Tornado.web.HTTPError(500)
+        # sort on channel age
+        channels = response
+        channels.sort(key=itemgetter("updated"))
+        channels.reverse()
+        self.render("templates/list.html", channels=channels)
+
+class AddChannelHandler(SessionRequestHandler):
+    @tornado.web.asynchronous
+    def get(self, channel):
+        # check if the person is signed in
+        if not self.check_auth():
+            self.redirect("/")
+            return
+        self.channel = channel
+        # make the channel with default values
+        ch = {"name": channel, "line_count": 0,
+              "updated": datetime.datetime.utcnow()}
+        # insert the channel
+        self.db.channels.insert(ch, callback=self._on_mongo_insert)
+    def _on_mongo_insert(self, response, error):
+        if error:
+            raise Tornado.web.HTTPError(500)
+        # redirect to newly-created channel page
+        self.redirect("/channel/%s" % self.channel)
+
 class ChannelHandler(SessionRequestHandler):
     def get(self, channel):
-        # note: StrictRedis is not available
+        # check if the person is signed in
+        if not self.check_auth():
+            self.redirect("/")
+            return
+        # fetch the channel list
         r = redis.Redis(host="localhost",port=6379,db=0)
         r.sadd("channels", channel)
         key = "channel:%s" % channel
@@ -118,6 +164,7 @@ class GoogleHandler(SessionRequestHandler, tornado.auth.GoogleMixin):
             return
         self.authenticate_redirect()
 
+    @tornado.web.asynchronous
     def _on_auth(self, user):
         if not user:
             raise tornado.web.HTTPError(500, "Google auth failed")
@@ -249,6 +296,7 @@ handlers = [
     (r"/auth", GoogleHandler),
     (r"/logout", LogoutHandler),
     (r"/channel/(\w+)", ChannelHandler),
+    (r"/newchannel/(\w+)", AddChannelHandler),
     (r"/websocket/(\w+)", EchoWebSocket),    
 ]
 
