@@ -1,0 +1,25 @@
+/* authd-template.css */
+
+body {
+    margin:0;
+    padding:0;
+}
+
+/* ------------------------------------------------------------ */
+
+#page-header {
+    padding:0.3em;
+    font:bold 16pt sans-serif;
+    background-color:black;
+}
+
+#page-header a, #page-header a:visited {
+    color:white;
+}
+
+#home-page {
+    display:inline-block;
+    margin-right:1em;
+    padding-right:1em;
+    border-right:2px #888 solid;
+}

@@ -77,7 +77,7 @@ TODO
  - Probably clean up the styles right about here
    - front page
    - channel list
-   - \ channel
+   - / channel
    - settings
  - who's in the room list? / past participants (sadd, srem)
  - Add title-page notification

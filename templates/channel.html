@@ -1,43 +1,38 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Sockityak</title>
+{% extends "authd-template.html" %}
 
-    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
-  </head>
+{% block title %}
+## {{ channel }}
+{% end %}
 
-  <body>
-    <header id="page-header">
-      <a id="home-page" href="/">Channels</a>
-      <a href="#">Some Other... organizations?</a>
-    </header>
+{% block css %}
+<link rel="stylesheet" type="text/css" href="/static/css/channel.css" />
+{% end %}
 
-    <h1 id="channel-name">{{ channel }}</h1>
+{% block content %}
+<h1 id="channel-name">##{{ channel }}</h1>
 
-    <ul id="chatroom">
-      <button id="load-past">Load past chats</button>
-    </ul>
-    <form method="POST" id="form">
-      <button type="button" id="submit">SUBMIT</button>
-      <div id="post-cont">
-	<input type="text" name="post" id="post" />
-      </div>
-    </form>
+<ul id="chatroom">
+  <button id="load-past">Load past chats</button>
+</ul>
+<form method="POST" id="form">
+  <button type="button" id="submit">SUBMIT</button>
+  <div id="post-cont">
+    <input type="text" name="post" id="post" />
+  </div>
+</form>
 
-    <script type="text/template" id="line-template">
-      <span class="timestamp"></span>
-      <span class="line-number"></span>
-      <span class="username"></span>
-      <span class="message"></span>
-    </script>
+<script type="text/template" id="line-template">
+  <span class="timestamp"></span>
+  <span class="line-number"></span>
+  <span class="username"></span>
+  <span class="message"></span>
+</script>
+{% end %}
 
-    <script src="/static/js/jquery-1.7.1.min.js"></script>
-    <script src="/static/js/underscore-min.js"></script>
-    <script src="/static/js/backbone-min.js"></script>
-    <script type="text/javascript">
-      var channel = "{{ channel }}";
-      var user = "{{ user }}";
-    </script>
-    <script src="/static/js/script.js"></script>
-  </body>
-</html>
+{% block javascript %}
+<script type="text/javascript">
+  var channel = "{{ channel }}";
+  var user = "{{ user }}";
+</script>
+<script src="/static/js/script.js"></script>
+{% end %}
