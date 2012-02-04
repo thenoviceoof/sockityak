@@ -380,8 +380,8 @@ handlers = [
     (r"/", MainHandler),
     (r"/auth", GoogleHandler),
     (r"/logout", LogoutHandler),
-    (r"/channel/(\w+)", ChannelHandler),
-    (r"/newchannel/(\w+)", AddChannelHandler),
+    (r"/channel/([\w-]+)", ChannelHandler),
+    (r"/newchannel/([\w-]+)", AddChannelHandler),
     (r"/websocket/(\w+)", EchoWebSocket),    
 ]
 

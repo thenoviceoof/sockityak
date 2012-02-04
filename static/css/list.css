@@ -1,0 +1,34 @@
+#channels {
+    margin:0;
+    padding:0;
+    list-style:none;
+}
+
+#channels li {
+    display:block;
+    margin:0;
+    padding:0.5em;
+    font:16pt sans-serif;
+}
+
+#channels li:nth-child(odd) {
+    background-color:#CCC;
+}
+#channels li:nth-child(even) {
+    background-color:#EEE;
+}
+
+#channels .channel-link {
+    display:inline-block;
+    width:15em;
+    color:black;
+    font-weight:bold;
+}
+
+#channels .channel-update {
+    color:#888;
+}
+
+#new-channel {
+    font:16pt sans-serif;
+}

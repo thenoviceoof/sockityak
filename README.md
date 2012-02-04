@@ -76,7 +76,7 @@ TODO
  - X check sessions are still valid after each message
  - Probably clean up the styles right about here
    - front page
-   - channel list
+   - / channel list
    - / channel
    - settings
  - who's in the room list? / past participants (sadd, srem)

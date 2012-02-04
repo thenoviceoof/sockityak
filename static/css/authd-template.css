@@ -23,3 +23,7 @@ body {
     padding-right:1em;
     border-right:2px #888 solid;
 }
+
+#logout {
+    float:right;
+}

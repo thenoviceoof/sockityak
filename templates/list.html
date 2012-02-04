@@ -1,23 +1,22 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Hello world</title>
-  </head>
+{% extends "authd-template.html" %}
 
-  <body>
-    <a href="/logout">Log out</a>
+{% block css %}
+<link rel="stylesheet" type="text/css" href="/static/css/list.css" />
+{% end %}
 
-    <ul id="stuff">
-      {% for channel in channels %}
-      <li>
-	<a href="/channel/{{ channel['name'] }}">##{{ channel['name'] }}</a>
-	{{ channel['updated'] }}
-      </li>
-      {% end %}
-      <li id="new_channel">Make new channel</li>
-    </ul>
+{% block content %}
+<ul id="channels">
+  {% for channel in channels %}
+  <li>
+    <a class="channel-link" href="/channel/{{ channel['name'] }}">
+      ##{{ channel['name'] }}</a>
+    <span class="channel-update">{{ channel['updated'] }}</span>
+  </li>
+  {% end %}
+  <button id="new-channel">Make new channel</button>
+</ul>
+{% end %}
 
-    <script src="/static/js/jquery-1.7.1.min.js"></script>
-    <script src="/static/js/index.js"></script>
-  </body>
-</html>
+{% block javascript %}
+<script src="/static/js/index.js"></script>
+{% end %}
