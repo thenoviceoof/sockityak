@@ -304,7 +304,7 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
         self.db.command(command, callback=_on_line_inc)
 
     # handle a request for old chats
-    def fetch_old(self, first_index):
+    def fetch_old(self, first_index, number=None):
         # check signin
         if not self.session.get("user"):
             self.write_message({"type":"error", "message": "Not signed in"})
@@ -320,15 +320,17 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
                         for r in response]
             j = {"type":"history", "message": messages}
             self.write_message(j)
+        if not number:
+            number = 10
         # multiplexing on the index
         if first_index is None:
             self.db.posts.find({"channel": self.channel},
-                               sort=[("line",-1)], limit=10,
+                               sort=[("line",-1)], limit=number,
                                callback=_on_mongo_fetch)
         else:
             self.db.posts.find({"channel": self.channel,
                                 "line": {"$lt": int(first_index)}},
-                               sort=[("line",-1)], limit=10,
+                               sort=[("line",-1)], limit=number,
                                callback=_on_mongo_fetch)
     # handle an authentication request
     def auth(self, session_token):
@@ -350,7 +352,8 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler, SessionRequestHandler):
         if t == "message":
             self.recieve_chat(message)
         elif t == "history":
-            self.fetch_old(message)
+            number = d.get("number", None)
+            self.fetch_old(message, number)
         elif t == "auth":
             self.auth(message)
         else:

@@ -26,6 +26,11 @@ body {
 
 /* ------------------------------------------------------------ */
 
+#load-past {
+    display:inline-block;
+    margin:0.5em;
+}
+
 #channel-name {
     margin:0.3em;
     font-family:sans-serif;
@@ -100,14 +105,15 @@ body {
 
 #post {
     display:inline-block;
-    width:100%;
+    width:90%;
 }
 
 #submit {
     position:relative;
     float:right;
     display:inline-block;
-    width:80px;
+    width:10%;
     margin:0;
     padding:3px;
+    z-index:1;
 }

@@ -78,9 +78,6 @@
             var c = $("#chatroom");
             var cc = $("#chat-cont");
             var scrollt = false;
-            console.log("start");
-            console.log(cc.height() - c.height());
-            console.log(c.scrollTop());
             if(c.scrollTop() > cc.height() - c.height())
                 scrollt = true;
             cc.remove();
@@ -94,9 +91,6 @@
             c.append(div);
             cc = $("#chat-cont");
             // move scroll
-            console.log(cc.height());
-            console.log(c.height());
-            console.log(cc.height() - c.height());
             if(scrollt) {
                 c.scrollTop(cc.height());
             }
@@ -149,11 +143,13 @@
             };
             // get previous
             self.fetchOld = function() {
+                var num = Math.floor($("#chatroom").height()/24 - 1);
                 var models = thread.models;
-                var obj = {"type": "history"};
+                var obj = {"type": "history", "number": num};
                 if(models.length != 0) {
                     obj["message"] = models[0].get("line");
                 }
+                console.log();
                 var j = JSON.stringify(obj)
                 ws.send(j);
             };
